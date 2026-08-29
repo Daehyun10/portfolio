@@ -7,10 +7,12 @@ async function main() {
   const email = process.env.ADMIN_EMAIL ?? 'admin@example.com';
   const password = process.env.ADMIN_PASSWORD ?? 'admin1234';
 
+  // .env 의 비밀번호를 항상 반영한다. 계정이 이미 있어도 비밀번호를 갱신한다.
+  const hashed = await bcrypt.hash(password, 10);
   await prisma.user.upsert({
     where: { email },
-    update: {},
-    create: { email, password: await bcrypt.hash(password, 10), name: '관리자' },
+    update: { password: hashed },
+    create: { email, password: hashed, name: '관리자' },
   });
 
   await prisma.about.upsert({
