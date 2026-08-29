@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+out/
+
+# 환경 변수 — 절대 커밋하지 않는다
+.env
+.env.*
+!.env.example
+
+.DS_Store
+Thumbs.db
+*.log
+
+*.tsbuildinfo

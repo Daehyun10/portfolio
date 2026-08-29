@@ -1,0 +1,343 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { revalidateProjects } from '@/app/actions';
+import { adminApi, tokenStore } from '@/lib/admin-client';
+
+interface TroubleDraft {
+  title: string;
+  problem: string;
+  solution: string;
+}
+
+interface Draft {
+  slug: string;
+  title: string;
+  summary: string;
+  description: string;
+  period: string;
+  role: string;
+  teamSize: string;
+  stack: string;
+  githubUrl: string;
+  liveUrl: string;
+  featured: boolean;
+  published: boolean;
+  troubles: TroubleDraft[];
+}
+
+const EMPTY_DRAFT: Draft = {
+  slug: '',
+  title: '',
+  summary: '',
+  description: '',
+  period: '',
+  role: '',
+  teamSize: '',
+  stack: '',
+  githubUrl: '',
+  liveUrl: '',
+  featured: true,
+  published: true,
+  troubles: [],
+};
+
+const inputClass =
+  'w-full border border-line bg-bg px-2.5 py-1.5 text-sm outline-none transition-colors duration-150 placeholder:text-muted hover:border-muted focus:border-accent';
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-xs tracking-[0.14em] text-muted">{label}</span>
+      <div className="mt-1.5">{children}</div>
+    </label>
+  );
+}
+
+export default function ProjectComposer() {
+  const router = useRouter();
+  const [allowed, setAllowed] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    // 토큰이 실제로 유효할 때만 추가 버튼을 노출한다. 방문자에게는 아무것도 보이지 않는다.
+    if (!tokenStore.get()) return;
+    adminApi
+      .me()
+      .then(() => setAllowed(true))
+      .catch(() => setAllowed(false));
+  }, []);
+
+  if (!allowed) return null;
+
+  function patch(next: Partial<Draft>) {
+    setDraft((prev) => ({ ...prev, ...next }));
+  }
+
+  function patchTrouble(index: number, next: Partial<TroubleDraft>) {
+    setDraft((prev) => ({
+      ...prev,
+      troubles: prev.troubles.map((t, i) => (i === index ? { ...t, ...next } : t)),
+    }));
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+
+    const payload = {
+      slug: draft.slug.trim(),
+      title: draft.title.trim(),
+      summary: draft.summary.trim(),
+      description: draft.description.trim(),
+      // 비어 있는 값은 보내지 않는다. 서버가 빈 문자열을 거르지 않기 때문.
+      period: draft.period.trim() || undefined,
+      role: draft.role.trim() || undefined,
+      teamSize: draft.teamSize ? Number(draft.teamSize) : undefined,
+      githubUrl: draft.githubUrl.trim() || undefined,
+      liveUrl: draft.liveUrl.trim() || undefined,
+      stack: draft.stack
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      featured: draft.featured,
+      published: draft.published,
+      troubles: draft.troubles
+        .filter((t) => t.title.trim() && t.problem.trim() && t.solution.trim())
+        .map((t, i) => ({
+          title: t.title.trim(),
+          problem: t.problem.trim(),
+          solution: t.solution.trim(),
+          order: i,
+        })),
+    };
+
+    try {
+      await adminApi.createProject(payload);
+      await revalidateProjects();
+      setDraft(EMPTY_DRAFT);
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mb-6 flex w-full items-center gap-2 border border-dashed border-line px-4 py-3 text-sm text-muted transition-colors duration-150 hover:border-fg hover:text-fg"
+      >
+        <span aria-hidden className="text-base leading-none">
+          +
+        </span>
+        새 작업 추가
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mb-10 border-t border-line pt-6">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-xs tracking-[0.2em] text-muted">새 작업</h2>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setError(null);
+          }}
+          className="text-sm text-muted transition-colors duration-150 hover:text-fg"
+        >
+          닫기
+        </button>
+      </div>
+
+      <div className="mt-5 space-y-4">
+        <div className="grid gap-4 sm:grid-cols-[14rem_1fr]">
+          <Field label="주소(slug)">
+            <input
+              required
+              value={draft.slug}
+              onChange={(e) => patch({ slug: e.target.value })}
+              placeholder="my-game"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="제목">
+            <input
+              required
+              value={draft.title}
+              onChange={(e) => patch({ title: e.target.value })}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+
+        <Field label="한 줄 요약">
+          <input
+            required
+            value={draft.summary}
+            onChange={(e) => patch({ summary: e.target.value })}
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="개요">
+          <textarea
+            required
+            rows={7}
+            value={draft.description}
+            onChange={(e) => patch({ description: e.target.value })}
+            className={`${inputClass} leading-relaxed`}
+          />
+        </Field>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="기간">
+            <input
+              value={draft.period}
+              onChange={(e) => patch({ period: e.target.value })}
+              placeholder="2025.01 - 2025.03"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="역할">
+            <input
+              value={draft.role}
+              onChange={(e) => patch({ role: e.target.value })}
+              placeholder="기획 · 개발"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="인원">
+            <input
+              type="number"
+              min={1}
+              value={draft.teamSize}
+              onChange={(e) => patch({ teamSize: e.target.value })}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="기술 (쉼표로 구분)">
+            <input
+              value={draft.stack}
+              onChange={(e) => patch({ stack: e.target.value })}
+              placeholder="Unity, C#"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="GitHub URL">
+            <input
+              value={draft.githubUrl}
+              onChange={(e) => patch({ githubUrl: e.target.value })}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="배포 URL">
+            <input
+              value={draft.liveUrl}
+              onChange={(e) => patch({ liveUrl: e.target.value })}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+
+        <div className="border-t border-line pt-5">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-xs tracking-[0.2em] text-muted">문제와 해결</h3>
+            <button
+              type="button"
+              onClick={() =>
+                patch({ troubles: [...draft.troubles, { title: '', problem: '', solution: '' }] })
+              }
+              className="text-sm text-muted transition-colors duration-150 hover:text-fg"
+            >
+              + 항목 추가
+            </button>
+          </div>
+
+          {draft.troubles.map((trouble, i) => (
+            <div key={i} className="mt-4 grid gap-3 border-l border-line pl-4">
+              <input
+                value={trouble.title}
+                onChange={(e) => patchTrouble(i, { title: e.target.value })}
+                placeholder="무엇이 문제였는지 한 줄로"
+                className={inputClass}
+              />
+              <textarea
+                rows={3}
+                value={trouble.problem}
+                onChange={(e) => patchTrouble(i, { problem: e.target.value })}
+                placeholder="문제 상황"
+                className={`${inputClass} leading-relaxed`}
+              />
+              <textarea
+                rows={3}
+                value={trouble.solution}
+                onChange={(e) => patchTrouble(i, { solution: e.target.value })}
+                placeholder="해결 방법"
+                className={`${inputClass} leading-relaxed`}
+              />
+              <button
+                type="button"
+                onClick={() => patch({ troubles: draft.troubles.filter((_, j) => j !== i) })}
+                className="justify-self-start text-sm text-muted transition-colors duration-150 hover:text-accent"
+              >
+                이 항목 삭제
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-6 pt-1 text-sm text-muted">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={draft.published}
+              onChange={(e) => patch({ published: e.target.checked })}
+              className="accent-accent"
+            />
+            공개
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={draft.featured}
+              onChange={(e) => patch({ featured: e.target.checked })}
+              className="accent-accent"
+            />
+            첫 화면에 노출
+          </label>
+        </div>
+
+        {error && <p className="text-sm text-accent">{error}</p>}
+
+        <div className="flex items-center gap-2 border-t border-line pt-5">
+          <button
+            type="submit"
+            disabled={busy}
+            className="bg-fg px-4 py-1.5 text-sm text-bg transition-colors duration-150 hover:bg-accent disabled:opacity-45"
+          >
+            {busy ? '추가 중' : '추가'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDraft(EMPTY_DRAFT)}
+            className="border border-line px-4 py-1.5 text-sm text-muted transition-colors duration-150 hover:border-fg hover:text-fg"
+          >
+            내용 비우기
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+}
