@@ -1,5 +1,6 @@
 import Editable from '@/components/Editable';
 import Footer from '@/components/Footer';
+import Reveal from '@/components/Reveal';
 import SkillBoard from '@/components/SkillBoard';
 import { getAbout } from '@/lib/api';
 
@@ -36,9 +37,10 @@ export default async function AboutPage() {
       {about && (
         <section className="mx-auto max-w-3xl px-6 py-14">
           <div className="border-t border-line">
-            {about.sections.map((section) => (
-              <div
+            {about.sections.map((section, i) => (
+              <Reveal
                 key={section.id}
+                delay={i * 60}
                 className="grid gap-x-8 gap-y-2 border-b border-line py-7 sm:grid-cols-[8rem_1fr]"
               >
                 <Editable
@@ -51,11 +53,13 @@ export default async function AboutPage() {
                   as="p"
                   className="block max-w-[58ch] whitespace-pre-wrap leading-[1.85] text-muted"
                 />
-              </div>
+              </Reveal>
             ))}
           </div>
 
-          <SkillBoard skills={about.skills ?? []} />
+          <Reveal>
+            <SkillBoard skills={about.skills ?? []} />
+          </Reveal>
 
           <div className="mt-14 flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted">
             {about.email && (

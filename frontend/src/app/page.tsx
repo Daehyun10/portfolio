@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Editable from '@/components/Editable';
+import Reveal from '@/components/Reveal';
 import Footer from '@/components/Footer';
 import Marquee from '@/components/Marquee';
 import ProjectCard from '@/components/ProjectCard';
@@ -23,9 +24,11 @@ export default async function HomePage() {
         <Editable id="home.intro.2" as="p" className="mt-4 max-w-[58ch] leading-[1.8] text-muted" />
       </section>
 
-      <Marquee />
+      <Reveal>
+        <Marquee />
+      </Reveal>
 
-      <section className="mx-auto max-w-5xl px-6 py-20">
+      <Reveal as="section" className="mx-auto max-w-5xl px-6 py-20">
         <div className="flex items-baseline justify-between border-b border-line pb-3">
           <Editable id="home.work.label" as="h2" className="text-xs tracking-[0.2em] text-muted" />
           <Link
@@ -47,9 +50,9 @@ export default async function HomePage() {
             ))}
           </div>
         )}
-      </section>
+      </Reveal>
 
-      <section className="mx-auto max-w-5xl px-6">
+      <Reveal as="section" className="mx-auto max-w-5xl px-6">
         <div className="grid border-t border-line sm:grid-cols-2">
           <Link
             href="/project"
@@ -74,7 +77,7 @@ export default async function HomePage() {
             <Editable id="home.card.about.body" as="p" className="mt-2 text-sm text-muted" />
           </Link>
         </div>
-      </section>
+      </Reveal>
 
       <Footer />
     </main>

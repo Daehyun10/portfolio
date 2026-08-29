@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Footer from '@/components/Footer';
 import ProjectGallery from '@/components/ProjectGallery';
+import Reveal from '@/components/Reveal';
 import { getProject, getProjects } from '@/lib/api';
 
 export async function generateStaticParams() {
@@ -58,17 +59,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <p className="mt-6 text-sm text-muted">{project.stack.join(' · ')}</p>
         )}
 
-        <section className="mt-12">
+        <Reveal as="section" className="mt-12">
           <h2 className="text-xs tracking-[0.2em] text-muted">OVERVIEW</h2>
           <p className="mt-4 max-w-[62ch] whitespace-pre-wrap leading-[1.85] text-muted">
             {project.description}
           </p>
-        </section>
+        </Reveal>
 
-        <ProjectGallery images={project.images ?? []} />
+        <Reveal>
+          <ProjectGallery images={project.images ?? []} />
+        </Reveal>
 
         {project.troubles.length > 0 && (
-          <section className="mt-14">
+          <Reveal as="section" className="mt-14">
             <h2 className="text-xs tracking-[0.2em] text-muted">TROUBLE SHOOTING</h2>
 
             {/* 카드 대신 괘선으로 항목을 나눈다. */}
@@ -95,7 +98,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 </div>
               ))}
             </div>
-          </section>
+          </Reveal>
         )}
 
         {(project.githubUrl || project.liveUrl) && (

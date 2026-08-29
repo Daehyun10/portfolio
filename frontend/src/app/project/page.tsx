@@ -1,5 +1,6 @@
 import Editable from '@/components/Editable';
 import Footer from '@/components/Footer';
+import Reveal from '@/components/Reveal';
 import ProjectComposer from '@/components/ProjectComposer';
 import ProjectGrid from '@/components/ProjectGrid';
 import { getProjects } from '@/lib/api';
@@ -20,7 +21,7 @@ export default async function ProjectListPage() {
         />
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-14">
+      <Reveal as="section" className="mx-auto max-w-5xl px-6 py-14">
         <ProjectComposer />
 
         {projects.length === 0 ? (
@@ -32,7 +33,7 @@ export default async function ProjectListPage() {
         ) : (
           <ProjectGrid projects={projects} />
         )}
-      </section>
+      </Reveal>
 
       <Footer />
     </main>
