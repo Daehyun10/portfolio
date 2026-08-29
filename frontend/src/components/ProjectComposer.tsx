@@ -11,6 +11,11 @@ interface TroubleDraft {
   solution: string;
 }
 
+interface ImageDraft {
+  url: string;
+  caption: string;
+}
+
 interface Draft {
   slug: string;
   title: string;
@@ -25,6 +30,7 @@ interface Draft {
   featured: boolean;
   published: boolean;
   troubles: TroubleDraft[];
+  images: ImageDraft[];
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -41,6 +47,7 @@ const EMPTY_DRAFT: Draft = {
   featured: true,
   published: true,
   troubles: [],
+  images: [],
 };
 
 const inputClass =
@@ -62,6 +69,7 @@ export default function ProjectComposer() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     // 토큰이 실제로 유효할 때만 추가 버튼을 노출한다. 방문자에게는 아무것도 보이지 않는다.
@@ -83,6 +91,32 @@ export default function ProjectComposer() {
       ...prev,
       troubles: prev.troubles.map((t, i) => (i === index ? { ...t, ...next } : t)),
     }));
+  }
+
+  /// 여러 장을 한 번에 고를 수 있게 하되, 업로드는 순서대로 진행해 순서가 뒤섞이지 않게 한다.
+  async function handleFiles(files: FileList) {
+    setUploading(true);
+    setError(null);
+    try {
+      const uploaded: ImageDraft[] = [];
+      for (const file of Array.from(files)) {
+        const { url } = await adminApi.uploadImage(file);
+        uploaded.push({ url, caption: '' });
+      }
+      setDraft((prev) => ({ ...prev, images: [...prev.images, ...uploaded] }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function moveImage(from: number, to: number) {
+    if (to < 0 || to >= draft.images.length) return;
+    const next = [...draft.images];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    patch({ images: next });
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -115,6 +149,11 @@ export default function ProjectComposer() {
           solution: t.solution.trim(),
           order: i,
         })),
+      images: draft.images.map((img, i) => ({
+        url: img.url,
+        caption: img.caption.trim() || undefined,
+        order: i,
+      })),
     };
 
     try {
@@ -249,6 +288,85 @@ export default function ProjectComposer() {
               className={inputClass}
             />
           </Field>
+        </div>
+
+        <div className="border-t border-line pt-5">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-xs tracking-[0.2em] text-muted">스크린샷</h3>
+            <span className="text-xs text-muted">
+              {uploading ? '올리는 중...' : `${draft.images.length}장`}
+            </span>
+          </div>
+
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading}
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files && files.length > 0) void handleFiles(files);
+              // 같은 파일을 다시 고를 수 있도록 입력값을 비운다.
+              e.target.value = '';
+            }}
+            className="mt-3 block w-full text-xs text-muted"
+          />
+          <p className="mt-1.5 text-xs text-muted">
+            한 번에 여러 장을 고를 수 있습니다. 장당 5MB 이하, png · jpg · webp · gif.
+          </p>
+
+          {draft.images.map((image, i) => (
+            <div key={image.url} className="mt-4 flex gap-3 border-l border-line pl-4">
+              {/* 업로드 직후 확인용이라 최적화 없이 그대로 띄운다. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image.url}
+                alt={`스크린샷 ${i + 1}`}
+                className="h-16 w-24 shrink-0 border border-line object-cover"
+              />
+
+              <div className="min-w-0 flex-1">
+                <input
+                  value={image.caption}
+                  onChange={(e) =>
+                    patch({
+                      images: draft.images.map((img, j) =>
+                        j === i ? { ...img, caption: e.target.value } : img,
+                      ),
+                    })
+                  }
+                  placeholder="설명 (선택)"
+                  className={inputClass}
+                />
+
+                <div className="mt-1.5 flex gap-3 text-xs text-muted">
+                  <button
+                    type="button"
+                    onClick={() => moveImage(i, i - 1)}
+                    disabled={i === 0}
+                    className="transition-colors duration-150 hover:text-fg disabled:opacity-35"
+                  >
+                    위로
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveImage(i, i + 1)}
+                    disabled={i === draft.images.length - 1}
+                    className="transition-colors duration-150 hover:text-fg disabled:opacity-35"
+                  >
+                    아래로
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => patch({ images: draft.images.filter((_, j) => j !== i) })}
+                    className="transition-colors duration-150 hover:text-accent"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="border-t border-line pt-5">

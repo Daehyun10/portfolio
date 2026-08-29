@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Footer from '@/components/Footer';
+import ProjectGallery from '@/components/ProjectGallery';
 import { getProject, getProjects } from '@/lib/api';
 
 export async function generateStaticParams() {
@@ -63,6 +64,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             {project.description}
           </p>
         </section>
+
+        <ProjectGallery images={project.images ?? []} />
 
         {project.troubles.length > 0 && (
           <section className="mt-14">

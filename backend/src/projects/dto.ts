@@ -17,6 +17,12 @@ export class TroubleDto {
   @IsOptional() @IsInt() order?: number;
 }
 
+export class ProjectImageDto {
+  @IsString() @MinLength(1) url!: string;
+  @IsOptional() @IsString() caption?: string;
+  @IsOptional() @IsInt() order?: number;
+}
+
 export class CreateProjectDto {
   @IsString()
   @Matches(/^[a-z0-9-]+$/, { message: 'slug은 소문자, 숫자, 하이픈만 사용할 수 있습니다.' })
@@ -42,6 +48,12 @@ export class CreateProjectDto {
   @ValidateNested({ each: true })
   @Type(() => TroubleDto)
   troubles?: TroubleDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProjectImageDto)
+  images?: ProjectImageDto[];
 }
 
 export class UpdateProjectDto extends CreateProjectDto {

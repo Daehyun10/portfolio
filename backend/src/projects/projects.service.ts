@@ -14,14 +14,20 @@ export class ProjectsService {
         ...(opts.featuredOnly ? { featured: true } : {}),
       },
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-      include: { troubles: { orderBy: { order: 'asc' } } },
+      include: {
+        troubles: { orderBy: { order: 'asc' } },
+        images: { orderBy: { order: 'asc' } },
+      },
     });
   }
 
   async findBySlug(slug: string, includeUnpublished = false) {
     const project = await this.prisma.project.findUnique({
       where: { slug },
-      include: { troubles: { orderBy: { order: 'asc' } } },
+      include: {
+        troubles: { orderBy: { order: 'asc' } },
+        images: { orderBy: { order: 'asc' } },
+      },
     });
     if (!project || (!project.published && !includeUnpublished)) {
       throw new NotFoundException(`프로젝트를 찾을 수 없습니다: ${slug}`);
@@ -44,7 +50,7 @@ export class ProjectsService {
   }
 
   async create(dto: CreateProjectDto) {
-    const { troubles, ...rest } = dto;
+    const { troubles, images, ...rest } = dto;
     try {
       return await this.prisma.project.create({
         data: {
@@ -52,8 +58,14 @@ export class ProjectsService {
           troubles: troubles?.length
             ? { create: troubles.map((t, i) => ({ ...t, order: t.order ?? i })) }
             : undefined,
+          images: images?.length
+            ? { create: images.map((img, i) => ({ ...img, order: img.order ?? i })) }
+            : undefined,
         },
-        include: { troubles: { orderBy: { order: 'asc' } } },
+        include: {
+        troubles: { orderBy: { order: 'asc' } },
+        images: { orderBy: { order: 'asc' } },
+      },
       });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -64,7 +76,7 @@ export class ProjectsService {
   }
 
   async update(id: string, dto: UpdateProjectDto) {
-    const { troubles, ...rest } = dto;
+    const { troubles, images, ...rest } = dto;
     await this.ensureExists(id);
     return this.prisma.project.update({
       where: { id },
@@ -79,8 +91,20 @@ export class ProjectsService {
               },
             }
           : {}),
+        // images 도 troubles 와 같이 넘어온 경우에만 통째로 교체한다.
+        ...(images
+          ? {
+              images: {
+                deleteMany: {},
+                create: images.map((img, i) => ({ ...img, order: img.order ?? i })),
+              },
+            }
+          : {}),
       },
-      include: { troubles: { orderBy: { order: 'asc' } } },
+      include: {
+        troubles: { orderBy: { order: 'asc' } },
+        images: { orderBy: { order: 'asc' } },
+      },
     });
   }
 

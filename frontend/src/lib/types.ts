@@ -6,6 +6,13 @@ export interface Trouble {
   order: number;
 }
 
+export interface ProjectImage {
+  id: string;
+  url: string;
+  caption: string | null;
+  order: number;
+}
+
 export interface Project {
   id: string;
   slug: string;
@@ -24,6 +31,7 @@ export interface Project {
   published: boolean;
   viewCount: number;
   troubles: Trouble[];
+  images: ProjectImage[];
 }
 
 export interface AboutSection {
