@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import type { Express } from 'express';
 import { AppModule } from '../src/app.module';
+import { parseOrigins } from '../src/common/cors';
 
 let cached: Express | null = null;
 
@@ -12,7 +13,7 @@ async function getApp(): Promise<Express> {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: (process.env.CORS_ORIGIN ?? '*').split(','),
+    origin: parseOrigins(process.env.CORS_ORIGIN ?? '*'),
     credentials: true,
   });
   app.useGlobalPipes(
