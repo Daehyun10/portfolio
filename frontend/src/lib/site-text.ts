@@ -29,7 +29,7 @@ export const SITE_TEXT_DEFAULTS = {
   'footer.email': 'kdhyun081005@gmail.com',
   'footer.githubLabel': 'github.com/Daehyun10',
   'footer.githubUrl': 'https://github.com/Daehyun10',
-  'footer.copyright': 'Daehyun',
+  'footer.copyright': '김대현',
 } as const;
 
 export type SiteTextKey = keyof typeof SITE_TEXT_DEFAULTS;

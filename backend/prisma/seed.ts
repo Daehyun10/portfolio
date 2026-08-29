@@ -90,7 +90,8 @@ async function main() {
     await prisma.project.upsert({ where: { slug: p.slug }, update: {}, create: p });
   }
 
-  console.log(`시드 완료. 관리자 계정: ${email} / ${password}`);
+  // 비밀번호는 절대 출력하지 않는다. 터미널 기록과 CI 로그에 남는다.
+  console.log(`시드 완료. 관리자 계정: ${email}`);
 }
 
 main()

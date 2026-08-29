@@ -23,8 +23,8 @@ const sans = IBM_Plex_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: '이름 | 프론트엔드 개발자 포트폴리오',
-  description: '프로젝트와 문제 해결 과정을 기록한 포트폴리오입니다.',
+  title: '김대현 | 게임 개발자 포트폴리오',
+  description: '직접 만든 게임과 프로그래밍 프로젝트, 그 과정에서 해결한 문제를 기록한 포트폴리오입니다.',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
