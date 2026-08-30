@@ -6,6 +6,12 @@ export interface Trouble {
   order: number;
 }
 
+export interface ProcessStep {
+  id: string;
+  title: string;
+  order: number;
+}
+
 export interface ProjectImage {
   id: string;
   url: string;
@@ -19,6 +25,7 @@ export interface Project {
   title: string;
   summary: string;
   description: string;
+  concerns: string | null;
   thumbnail: string | null;
   period: string | null;
   role: string | null;
@@ -32,6 +39,7 @@ export interface Project {
   viewCount: number;
   troubles: Trouble[];
   images: ProjectImage[];
+  steps: ProcessStep[];
 }
 
 export interface AboutSection {

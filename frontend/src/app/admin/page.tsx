@@ -133,8 +133,8 @@ export default function AdminPage() {
                 </p>
                 <p className="truncate text-xs text-muted">
                   /{project.slug}
-                  {project.images.length > 0 && ` · 스크린샷 ${project.images.length}장`}
-                  {project.troubles.length > 0 && ` · 문제와 해결 ${project.troubles.length}개`}
+                  {(project.images?.length ?? 0) > 0 && ` · 스크린샷 ${project.images.length}장`}
+                  {(project.troubles?.length ?? 0) > 0 && ` · 문제와 해결 ${project.troubles.length}개`}
                 </p>
               </div>
 

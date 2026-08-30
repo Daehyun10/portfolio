@@ -32,6 +32,8 @@ interface Draft {
   published: boolean;
   troubles: TroubleDraft[];
   images: ImageDraft[];
+  steps: string[];
+  concerns: string;
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -49,6 +51,8 @@ const EMPTY_DRAFT: Draft = {
   published: true,
   troubles: [],
   images: [],
+  steps: [],
+  concerns: '',
 };
 
 /// 기존 작업을 폼이 다룰 수 있는 형태로 바꾼다.
@@ -66,12 +70,14 @@ function toDraft(project: Project): Draft {
     liveUrl: project.liveUrl ?? '',
     featured: project.featured,
     published: project.published,
-    troubles: project.troubles.map((t) => ({
+    troubles: (project.troubles ?? []).map((t) => ({
       title: t.title,
       problem: t.problem,
       solution: t.solution,
     })),
-    images: project.images.map((img) => ({ url: img.url, caption: img.caption ?? '' })),
+    images: (project.images ?? []).map((img) => ({ url: img.url, caption: img.caption ?? '' })),
+    steps: (project.steps ?? []).map((st) => st.title),
+    concerns: project.concerns ?? '',
   };
 }
 
@@ -187,6 +193,11 @@ export default function ProjectComposer({
         caption: img.caption.trim() || undefined,
         order: i,
       })),
+      steps: draft.steps
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .map((title, i) => ({ title, order: i })),
+      concerns: draft.concerns.trim() || undefined,
     };
 
     try {
@@ -325,6 +336,56 @@ export default function ProjectComposer({
               className={inputClass}
             />
           </Field>
+        </div>
+
+        <div className="border-t border-line pt-5">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-xs tracking-[0.2em] text-muted">개발 과정</h3>
+            <button
+              type="button"
+              onClick={() => patch({ steps: [...draft.steps, ''] })}
+              className="text-sm text-muted transition-colors duration-150 hover:text-fg"
+            >
+              + 단계 추가
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-muted">
+            어떤 과정을 거쳤는지 한 줄씩 적습니다. 적은 순서대로 표시됩니다.
+          </p>
+
+          {draft.steps.map((step, i) => (
+            <div key={i} className="mt-2.5 flex items-center gap-3">
+              <span className="tnum w-5 shrink-0 text-xs text-muted">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <input
+                value={step}
+                onChange={(e) =>
+                  patch({ steps: draft.steps.map((v, j) => (j === i ? e.target.value : v)) })
+                }
+                placeholder="예: 퍼즐 상호작용 프로토타입 제작"
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={() => patch({ steps: draft.steps.filter((_, j) => j !== i) })}
+                className="shrink-0 text-xs text-muted transition-colors duration-150 hover:text-accent"
+              >
+                삭제
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-line pt-5">
+          <h3 className="text-xs tracking-[0.2em] text-muted">고민한 점</h3>
+          <textarea
+            rows={5}
+            value={draft.concerns}
+            onChange={(e) => patch({ concerns: e.target.value })}
+            placeholder="만들면서 무엇을 고민했는지 (선택)"
+            className={`${inputClass} mt-3 leading-relaxed`}
+          />
         </div>
 
         <div className="border-t border-line pt-5">
