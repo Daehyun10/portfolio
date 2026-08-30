@@ -21,9 +21,12 @@ export default async function ProjectListPage() {
         />
       </section>
 
-      <Reveal as="section" className="mx-auto max-w-5xl px-6 py-14">
+      <section className="mx-auto max-w-5xl px-6 pt-14">
+        {/* 관리 UI 는 등장 효과에서 제외한다. 편집 중 화면이 움직이면 방해가 된다. */}
         <ProjectComposer />
+      </section>
 
+      <Reveal as="section" className="mx-auto max-w-5xl px-6 pb-14">
         {projects.length === 0 ? (
           <Editable
             id="project.empty"

@@ -92,6 +92,8 @@ html[data-js] .reveal {
 html[data-js] .reveal.is-visible {
   opacity: 1;
   transform: none;
+  /* 등장이 끝나면 해제한다. 남겨 두면 합성 레이어와 쌓임 맥락이 계속 유지된다. */
+  will-change: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
