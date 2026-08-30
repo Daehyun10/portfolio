@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { revalidateProjects } from '@/app/actions';
 import { adminApi, tokenStore } from '@/lib/admin-client';
+import type { Project } from '@/lib/types';
 
 interface TroubleDraft {
   title: string;
@@ -50,6 +51,30 @@ const EMPTY_DRAFT: Draft = {
   images: [],
 };
 
+/// 기존 작업을 폼이 다룰 수 있는 형태로 바꾼다.
+function toDraft(project: Project): Draft {
+  return {
+    slug: project.slug,
+    title: project.title,
+    summary: project.summary,
+    description: project.description,
+    period: project.period ?? '',
+    role: project.role ?? '',
+    teamSize: project.teamSize ? String(project.teamSize) : '',
+    stack: project.stack.join(', '),
+    githubUrl: project.githubUrl ?? '',
+    liveUrl: project.liveUrl ?? '',
+    featured: project.featured,
+    published: project.published,
+    troubles: project.troubles.map((t) => ({
+      title: t.title,
+      problem: t.problem,
+      solution: t.solution,
+    })),
+    images: project.images.map((img) => ({ url: img.url, caption: img.caption ?? '' })),
+  };
+}
+
 const inputClass =
   'w-full border border-line bg-bg px-2.5 py-1.5 text-sm outline-none transition-colors duration-150 placeholder:text-muted hover:border-muted focus:border-accent';
 
@@ -62,14 +87,22 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export default function ProjectComposer() {
+export default function ProjectComposer({
+  project,
+  onDone,
+}: {
+  /// 넘기면 수정 모드로 열린다. 없으면 새로 만드는 모드.
+  project?: Project;
+  onDone?: () => void;
+}) {
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [open, setOpen] = useState(Boolean(project));
+  const [draft, setDraft] = useState<Draft>(project ? toDraft(project) : EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // 토큰이 실제로 유효할 때만 추가 버튼을 노출한다. 방문자에게는 아무것도 보이지 않는다.
@@ -157,11 +190,14 @@ export default function ProjectComposer() {
     };
 
     try {
-      await adminApi.createProject(payload);
+      if (project) await adminApi.updateProject(project.id, payload);
+      else await adminApi.createProject(payload);
+
       await revalidateProjects();
-      setDraft(EMPTY_DRAFT);
+      if (!project) setDraft(EMPTY_DRAFT);
       setOpen(false);
       router.refresh();
+      onDone?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -187,12 +223,13 @@ export default function ProjectComposer() {
   return (
     <form onSubmit={handleSubmit} className="mb-10 border-t border-line pt-6">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-xs tracking-[0.2em] text-muted">새 작업</h2>
+        <h2 className="text-xs tracking-[0.2em] text-muted">{project ? '작업 수정' : '새 작업'}</h2>
         <button
           type="button"
           onClick={() => {
             setOpen(false);
             setError(null);
+            onDone?.();
           }}
           className="text-sm text-muted transition-colors duration-150 hover:text-fg"
         >
@@ -293,30 +330,42 @@ export default function ProjectComposer() {
         <div className="border-t border-line pt-5">
           <div className="flex items-baseline justify-between">
             <h3 className="text-xs tracking-[0.2em] text-muted">스크린샷</h3>
-            <span className="text-xs text-muted">
-              {uploading ? '올리는 중...' : `${draft.images.length}장`}
-            </span>
+            <div className="flex items-baseline gap-3">
+              <span className="text-xs text-muted">
+                {uploading ? '올리는 중' : `${draft.images.length}장`}
+              </span>
+              <button
+                type="button"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="text-sm text-muted transition-colors duration-150 hover:text-fg disabled:opacity-45"
+              >
+                + 스크린샷 추가
+              </button>
+            </div>
           </div>
 
+          {/* 실제 입력은 숨기고 버튼으로 연다. 다른 추가 버튼들과 모양을 맞춘다. */}
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             multiple
-            disabled={uploading}
+            className="hidden"
             onChange={(e) => {
               const files = e.target.files;
               if (files && files.length > 0) void handleFiles(files);
               // 같은 파일을 다시 고를 수 있도록 입력값을 비운다.
               e.target.value = '';
             }}
-            className="mt-3 block w-full text-xs text-muted"
           />
-          <p className="mt-1.5 text-xs text-muted">
-            한 번에 여러 장을 고를 수 있습니다. 장당 5MB 이하, png · jpg · webp · gif.
-          </p>
 
           {draft.images.map((image, i) => (
             <div key={image.url} className="mt-4 flex gap-3 border-l border-line pl-4">
+              <span className="tnum w-5 shrink-0 pt-1 text-xs text-muted">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+
               {/* 업로드 직후 확인용이라 최적화 없이 그대로 띄운다. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -445,7 +494,7 @@ export default function ProjectComposer() {
             disabled={busy}
             className="bg-fg px-4 py-1.5 text-sm text-bg transition-colors duration-150 hover:bg-accent disabled:opacity-45"
           >
-            {busy ? '추가 중' : '추가'}
+            {busy ? '저장 중' : project ? '수정 저장' : '추가'}
           </button>
           <button
             type="button"

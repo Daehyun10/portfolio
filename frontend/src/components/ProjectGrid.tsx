@@ -6,12 +6,14 @@ import { revalidateProjects } from '@/app/actions';
 import { adminApi } from '@/lib/admin-client';
 import type { Project } from '@/lib/types';
 import ProjectCard from './ProjectCard';
+import ProjectComposer from './ProjectComposer';
 import { useEditMode } from './EditModeProvider';
 
 export default function ProjectGrid({ projects }: { projects: Project[] }) {
   const router = useRouter();
   const { canEdit } = useEditMode();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function remove(project: Project) {
@@ -31,6 +33,17 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
     }
   }
 
+  if (editing) {
+    // 수정 중에는 목록 대신 폼만 보여, 어떤 작업을 고치는지 헷갈리지 않게 한다.
+    return (
+      <ProjectComposer
+        key={editing.id}
+        project={editing}
+        onDone={() => setEditing(null)}
+      />
+    );
+  }
+
   return (
     <>
       {error && <p className="mb-4 text-sm text-accent">{error}</p>}
@@ -41,7 +54,14 @@ export default function ProjectGrid({ projects }: { projects: Project[] }) {
             <ProjectCard project={project} />
 
             {canEdit && (
-              <div className="mt-1.5 flex justify-end">
+              <div className="mt-1.5 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditing(project)}
+                  className="text-xs text-muted transition-colors duration-150 hover:text-fg"
+                >
+                  수정
+                </button>
                 <button
                   type="button"
                   onClick={() => void remove(project)}
