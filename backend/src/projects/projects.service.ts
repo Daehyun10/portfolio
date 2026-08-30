@@ -17,7 +17,6 @@ export class ProjectsService {
       include: {
         troubles: { orderBy: { order: 'asc' } },
         images: { orderBy: { order: 'asc' } },
-        steps: { orderBy: { order: 'asc' } },
       },
     });
   }
@@ -28,7 +27,6 @@ export class ProjectsService {
       include: {
         troubles: { orderBy: { order: 'asc' } },
         images: { orderBy: { order: 'asc' } },
-        steps: { orderBy: { order: 'asc' } },
       },
     });
     if (!project || (!project.published && !includeUnpublished)) {
@@ -52,7 +50,7 @@ export class ProjectsService {
   }
 
   async create(dto: CreateProjectDto) {
-    const { troubles, images, steps, ...rest } = dto;
+    const { troubles, images, ...rest } = dto;
     try {
       return await this.prisma.project.create({
         data: {
@@ -63,14 +61,10 @@ export class ProjectsService {
           images: images?.length
             ? { create: images.map((img, i) => ({ ...img, order: img.order ?? i })) }
             : undefined,
-          steps: steps?.length
-            ? { create: steps.map((st, i) => ({ ...st, order: st.order ?? i })) }
-            : undefined,
         },
         include: {
         troubles: { orderBy: { order: 'asc' } },
         images: { orderBy: { order: 'asc' } },
-        steps: { orderBy: { order: 'asc' } },
       },
       });
     } catch (e) {
@@ -82,7 +76,7 @@ export class ProjectsService {
   }
 
   async update(id: string, dto: UpdateProjectDto) {
-    const { troubles, images, steps, ...rest } = dto;
+    const { troubles, images, ...rest } = dto;
     await this.ensureExists(id);
     return this.prisma.project.update({
       where: { id },
@@ -106,19 +100,10 @@ export class ProjectsService {
               },
             }
           : {}),
-        ...(steps
-          ? {
-              steps: {
-                deleteMany: {},
-                create: steps.map((st, i) => ({ ...st, order: st.order ?? i })),
-              },
-            }
-          : {}),
       },
       include: {
         troubles: { orderBy: { order: 'asc' } },
         images: { orderBy: { order: 'asc' } },
-        steps: { orderBy: { order: 'asc' } },
       },
     });
   }

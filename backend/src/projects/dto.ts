@@ -17,11 +17,6 @@ export class TroubleDto {
   @IsOptional() @IsInt() order?: number;
 }
 
-export class ProcessStepDto {
-  @IsString() @MinLength(1) title!: string;
-  @IsOptional() @IsInt() order?: number;
-}
-
 export class ProjectImageDto {
   @IsString() @MinLength(1) url!: string;
   @IsOptional() @IsString() caption?: string;
@@ -37,6 +32,7 @@ export class CreateProjectDto {
   @IsString() @MinLength(1) summary!: string;
   @IsString() @MinLength(1) description!: string;
 
+  @IsOptional() @IsString() process?: string;
   @IsOptional() @IsString() concerns?: string;
   @IsOptional() @IsString() thumbnail?: string;
   @IsOptional() @IsString() period?: string;
@@ -61,11 +57,6 @@ export class CreateProjectDto {
   @Type(() => ProjectImageDto)
   images?: ProjectImageDto[];
 
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ProcessStepDto)
-  steps?: ProcessStepDto[];
 }
 
 export class UpdateProjectDto extends CreateProjectDto {

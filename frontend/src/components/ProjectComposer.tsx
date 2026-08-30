@@ -32,7 +32,7 @@ interface Draft {
   published: boolean;
   troubles: TroubleDraft[];
   images: ImageDraft[];
-  steps: string[];
+  process: string;
   concerns: string;
 }
 
@@ -51,7 +51,7 @@ const EMPTY_DRAFT: Draft = {
   published: true,
   troubles: [],
   images: [],
-  steps: [],
+  process: '',
   concerns: '',
 };
 
@@ -76,7 +76,7 @@ function toDraft(project: Project): Draft {
       solution: t.solution,
     })),
     images: (project.images ?? []).map((img) => ({ url: img.url, caption: img.caption ?? '' })),
-    steps: (project.steps ?? []).map((st) => st.title),
+    process: project.process ?? '',
     concerns: project.concerns ?? '',
   };
 }
@@ -193,10 +193,7 @@ export default function ProjectComposer({
         caption: img.caption.trim() || undefined,
         order: i,
       })),
-      steps: draft.steps
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .map((title, i) => ({ title, order: i })),
+      process: draft.process.trim() || undefined,
       concerns: draft.concerns.trim() || undefined,
     };
 
@@ -339,42 +336,14 @@ export default function ProjectComposer({
         </div>
 
         <div className="border-t border-line pt-5">
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-xs tracking-[0.2em] text-muted">개발 과정</h3>
-            <button
-              type="button"
-              onClick={() => patch({ steps: [...draft.steps, ''] })}
-              className="text-sm text-muted transition-colors duration-150 hover:text-fg"
-            >
-              + 단계 추가
-            </button>
-          </div>
-          <p className="mt-1.5 text-xs text-muted">
-            어떤 과정을 거쳤는지 한 줄씩 적습니다. 적은 순서대로 표시됩니다.
-          </p>
-
-          {draft.steps.map((step, i) => (
-            <div key={i} className="mt-2.5 flex items-center gap-3">
-              <span className="tnum w-5 shrink-0 text-xs text-muted">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <input
-                value={step}
-                onChange={(e) =>
-                  patch({ steps: draft.steps.map((v, j) => (j === i ? e.target.value : v)) })
-                }
-                placeholder="예: 퍼즐 상호작용 프로토타입 제작"
-                className={inputClass}
-              />
-              <button
-                type="button"
-                onClick={() => patch({ steps: draft.steps.filter((_, j) => j !== i) })}
-                className="shrink-0 text-xs text-muted transition-colors duration-150 hover:text-accent"
-              >
-                삭제
-              </button>
-            </div>
-          ))}
+          <h3 className="text-xs tracking-[0.2em] text-muted">개발 과정</h3>
+          <textarea
+            rows={6}
+            value={draft.process}
+            onChange={(e) => patch({ process: e.target.value })}
+            placeholder="어떤 과정을 거쳐 만들었는지 (선택)"
+            className={`${inputClass} mt-3 leading-relaxed`}
+          />
         </div>
 
         <div className="border-t border-line pt-5">

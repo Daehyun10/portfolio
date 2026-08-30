@@ -23,6 +23,8 @@ model Project {
   title       String
   summary     String
   description String   @db.Text
+  /// 어떤 과정을 거쳐 만들었는지
+  process     String?  @db.Text
   /// 만들면서 고민했던 점
   concerns    String?  @db.Text
   thumbnail   String?
@@ -41,22 +43,8 @@ model Project {
 
   troubles Trouble[]
   images   ProjectImage[]
-  steps    ProcessStep[]
 
   @@index([published, order])
-}
-
-/// 무엇을 어떤 순서로 만들었는지 기록하는 개발 과정.
-model ProcessStep {
-  id        String @id @default(cuid())
-  projectId String
-  /// 어떤 과정이었는지 한 줄로만 적는다.
-  title     String
-  order     Int    @default(0)
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId, order])
 }
 
 /// 상세 페이지에 보여줄 스크린샷. 순서대로 나열된다.

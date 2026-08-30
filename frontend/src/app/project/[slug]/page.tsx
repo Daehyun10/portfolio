@@ -70,22 +70,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <ProjectGallery images={project.images ?? []} />
         </Reveal>
 
-        {(project.steps?.length ?? 0) > 0 && (
+        {project.process && (
           <Reveal as="section" className="mt-14">
             <h2 className="text-xs tracking-[0.2em] text-muted">개발 과정</h2>
-
-            {/* 한 줄짜리 단계를 번호와 함께 순서대로 세운다. */}
-            <ol className="mt-4 border-t border-line">
-              {project.steps.map((step, i) => (
-                <li
-                  key={step.id}
-                  className="grid grid-cols-[2rem_1fr] gap-x-5 border-b border-line py-3.5"
-                >
-                  <span className="tnum text-xs text-muted">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="text-sm leading-relaxed">{step.title}</span>
-                </li>
-              ))}
-            </ol>
+            <p className="mt-4 max-w-[62ch] whitespace-pre-wrap leading-[1.85] text-muted">
+              {project.process}
+            </p>
           </Reveal>
         )}
 
