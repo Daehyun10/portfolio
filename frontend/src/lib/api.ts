@@ -1,3 +1,4 @@
+import { normalizeEditedText } from './text';
 import type { About, Project } from './types';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
@@ -48,9 +49,21 @@ export async function getProject(slug: string): Promise<Project | null> {
 
 export async function getAbout(): Promise<About | null> {
   try {
-    return await request<About>('/about', {
+    const about = await request<About>('/about', {
       next: { revalidate: 60, tags: ['about'] },
     } as RequestInit);
+
+    // About 본문도 연필 편집기로 고치므로 같은 정리를 거친다.
+    return {
+      ...about,
+      headline: normalizeEditedText(about.headline),
+      intro: normalizeEditedText(about.intro),
+      sections: about.sections.map((s) => ({
+        ...s,
+        title: normalizeEditedText(s.title),
+        body: normalizeEditedText(s.body),
+      })),
+    };
   } catch {
     return null;
   }

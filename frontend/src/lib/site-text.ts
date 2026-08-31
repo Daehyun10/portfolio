@@ -1,4 +1,5 @@
 import { API_URL } from './api';
+import { normalizeEditedText } from './text';
 
 /**
  * 화면에 나오는 고정 문구의 기본값.
@@ -44,7 +45,11 @@ export async function getSiteText(): Promise<SiteText> {
     if (!res.ok) throw new Error(String(res.status));
 
     const stored = (await res.json()) as SiteText;
-    return { ...SITE_TEXT_DEFAULTS, ...stored };
+    // 이미 저장된 값에도 편집기가 넣은 공백이 남아 있을 수 있다.
+    const cleaned = Object.fromEntries(
+      Object.entries(stored).map(([key, value]) => [key, normalizeEditedText(value)]),
+    );
+    return { ...SITE_TEXT_DEFAULTS, ...cleaned };
   } catch {
     return { ...SITE_TEXT_DEFAULTS };
   }

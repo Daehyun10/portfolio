@@ -1,5 +1,6 @@
 'use client';
 
+import { normalizeEditedText } from '@/lib/text';
 import { useEditMode } from './EditModeProvider';
 
 /**
@@ -28,7 +29,9 @@ export default function Editable({
       spellCheck={false}
       data-edit-id={id}
       // 편집 중 리렌더로 커서가 튀지 않도록 blur 시점에만 값을 반영한다.
-      onBlur={(e: React.FocusEvent<HTMLElement>) => setDraft(id, e.currentTarget.innerText)}
+      onBlur={(e: React.FocusEvent<HTMLElement>) =>
+        setDraft(id, normalizeEditedText(e.currentTarget.innerText))
+      }
     >
       {text}
     </Tag>
