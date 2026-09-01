@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Footer from '@/components/Footer';
-import ProjectGallery from '@/components/ProjectGallery';
+import ProjectShot from '@/components/ProjectShot';
+import ReadingProgress from '@/components/ReadingProgress';
 import Reveal from '@/components/Reveal';
 import { getProject, getProjects } from '@/lib/api';
+import { toParagraphs } from '@/lib/paragraphs';
+import type { ProjectImage } from '@/lib/types';
 
 export async function generateStaticParams() {
   const projects = await getProjects();
@@ -14,6 +17,25 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const project = await getProject(slug);
   return { title: project ? `${project.title} | 포트폴리오` : '프로젝트를 찾을 수 없습니다' };
+}
+
+/// 첫 문단은 결론처럼 밝게 두고, 나머지는 본문 색으로 이어 붙인다.
+function Prose({ text }: { text: string }) {
+  const paragraphs = toParagraphs(text);
+  if (paragraphs.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      {paragraphs.map((paragraph, i) => (
+        <p
+          key={i}
+          className={i === 0 ? 'lead' : 'mt-5 max-w-[62ch] leading-[1.85] text-body'}
+        >
+          {paragraph}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -29,8 +51,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     ] as [string, string | null][]
   ).filter((entry): entry is [string, string] => Boolean(entry[1]));
 
+  // 스크린샷을 한곳에 몰지 않고 글 사이에 흩어 놓아 읽는 호흡을 만든다.
+  const images: ProjectImage[] = project.images ?? [];
+  const rest = images.slice(2);
+
   return (
     <main>
+      <ReadingProgress />
+
       <article className="mx-auto max-w-3xl px-6 pt-28">
         <Link
           href="/project"
@@ -56,35 +84,45 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         )}
 
         {project.stack.length > 0 && (
-          <p className="mt-6 text-sm text-muted">{project.stack.join(' · ')}</p>
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {project.stack.map((tech) => (
+              <li
+                key={tech}
+                className="border border-line px-3 py-1 text-xs text-muted transition-colors duration-150 hover:border-muted hover:text-fg"
+              >
+                {tech}
+              </li>
+            ))}
+          </ul>
         )}
 
         <Reveal as="section" className="mt-12">
           <h2 className="text-xs tracking-[0.2em] text-muted">OVERVIEW</h2>
-          <p className="mt-4 max-w-[62ch] whitespace-pre-wrap leading-[1.85] text-muted">
-            {project.description}
-          </p>
-        </Reveal>
-
-        <Reveal>
-          <ProjectGallery images={project.images ?? []} />
+          <Prose text={project.description} />
+          {images[0] && <ProjectShot images={images} index={0} />}
         </Reveal>
 
         {project.process && (
           <Reveal as="section" className="mt-14">
             <h2 className="text-xs tracking-[0.2em] text-muted">개발 과정</h2>
-            <p className="mt-4 max-w-[62ch] whitespace-pre-wrap leading-[1.85] text-muted">
-              {project.process}
-            </p>
+            <Prose text={project.process} />
+            {images[1] && <ProjectShot images={images} index={1} />}
           </Reveal>
         )}
 
         {project.concerns && (
           <Reveal as="section" className="mt-14">
             <h2 className="text-xs tracking-[0.2em] text-muted">고민한 점</h2>
-            <p className="mt-4 max-w-[62ch] whitespace-pre-wrap leading-[1.85] text-muted">
-              {project.concerns}
-            </p>
+            <Prose text={project.concerns} />
+          </Reveal>
+        )}
+
+        {rest.length > 0 && (
+          <Reveal as="section" className="mt-14">
+            <h2 className="text-xs tracking-[0.2em] text-muted">SCREENSHOTS</h2>
+            {rest.map((_, i) => (
+              <ProjectShot key={images[i + 2].id} images={images} index={i + 2} />
+            ))}
           </Reveal>
         )}
 
@@ -95,23 +133,29 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             {/* 카드 대신 괘선으로 항목을 나눈다. */}
             <div className="mt-4 border-t border-line">
               {project.troubles.map((trouble, i) => (
-                <div key={trouble.id} className="grid gap-x-5 border-b border-line py-7 sm:grid-cols-[2rem_1fr]">
+                <div
+                  key={trouble.id}
+                  className="-mx-4 grid gap-x-5 border-b border-line px-4 py-7 transition-colors duration-150 hover:bg-card sm:grid-cols-[2rem_1fr]"
+                >
                   <span className="tnum hidden pt-1 text-xs text-muted sm:block">
                     {String(i + 1).padStart(2, '0')}
                   </span>
 
                   <div>
-                    <h3 className="display max-w-[40ch] text-base leading-snug">
-                      {trouble.title}
-                    </h3>
-                    <p className="mt-3 max-w-[58ch] text-sm leading-[1.85] text-muted">
-                      <span className="mr-2 text-fg">문제</span>
-                      {trouble.problem}
-                    </p>
-                    <p className="mt-2 max-w-[58ch] text-sm leading-[1.85] text-muted">
-                      <span className="mr-2 text-fg">해결</span>
-                      {trouble.solution}
-                    </p>
+                    <h3 className="display max-w-[40ch] text-base leading-snug">{trouble.title}</h3>
+
+                    {/* 라벨을 본문에 붙이지 않고 왼쪽 열로 빼 눈이 걸리게 한다. */}
+                    <dl className="mt-4 space-y-3.5">
+                      {[
+                        ['문제', trouble.problem],
+                        ['해결', trouble.solution],
+                      ].map(([label, body]) => (
+                        <div key={label} className="grid gap-x-4 gap-y-1 sm:grid-cols-[3rem_1fr]">
+                          <dt className="pt-0.5 text-xs tracking-[0.14em] text-muted">{label}</dt>
+                          <dd className="max-w-[58ch] text-sm leading-[1.85] text-body">{body}</dd>
+                        </div>
+                      ))}
+                    </dl>
                   </div>
                 </div>
               ))}

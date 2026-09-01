@@ -4,6 +4,8 @@
   --color-bg: #f4f3ef;
   --color-fg: #111110;
   --color-muted: #6f6d67;
+  /* 긴 본문 전용. 라벨·캡션보다 한 단계 밝아 오래 읽어도 덜 피로하다. */
+  --color-body: #55524c;
   --color-line: #dedbd3;
   --color-card: #ffffff;
   /* 강조색은 현재 위치 표시와 링크 hover에만 쓴다. */
@@ -17,6 +19,7 @@
     --color-bg: #0d0d0c;
     --color-fg: #f2f1ec;
     --color-muted: #8f8d86;
+    --color-body: #a9a69e;
     --color-line: #2b2b28;
     --color-card: #171716;
     --color-accent: #d9694a;
@@ -103,4 +106,28 @@ html[data-js] .reveal.is-visible {
     transform: none;
     transition: none;
   }
+}
+
+/* 각 섹션의 첫 문장. 스크롤만 해도 무슨 얘긴지 잡히도록 밝고 크게 둔다. */
+.lead {
+  color: var(--color-fg);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  max-width: 42ch;
+}
+
+/* 읽기 진행 표시 */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--color-accent);
+  z-index: 60;
+  transition: width 80ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading-progress { transition: none; }
 }
