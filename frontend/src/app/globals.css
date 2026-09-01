@@ -30,6 +30,10 @@ html {
   scroll-behavior: smooth;
 }
 
+p {
+  text-wrap: pretty;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-fg);
@@ -112,8 +116,10 @@ html[data-js] .reveal.is-visible {
 .lead {
   color: var(--color-fg);
   font-size: 1.0625rem;
-  line-height: 1.6;
-  max-width: 42ch;
+  line-height: 1.7;
+  /* 너무 좁으면 두세 단어마다 줄이 끊겨 툭툭 끊긴 인상을 준다. */
+  max-width: 54ch;
+  text-wrap: pretty;
 }
 
 /* 읽기 진행 표시 */
