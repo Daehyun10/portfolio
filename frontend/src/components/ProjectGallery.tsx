@@ -85,7 +85,7 @@ export default function ProjectGallery({ images }: { images: ProjectImage[] }) {
           aria-modal="true"
           aria-label="스크린샷 크게 보기"
           onClick={close}
-          className="fixed inset-0 z-[60] flex flex-col bg-bg/95 p-4 sm:p-8"
+          className="fixed inset-0 z-[60] flex flex-col bg-bg p-4 sm:p-8"
         >
           <div className="flex shrink-0 items-center justify-between text-sm text-muted">
             <span className="tnum">
